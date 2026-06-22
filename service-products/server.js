@@ -37,19 +37,19 @@ const server = http.createServer((req, res) => {
       } else {
         console.warn(`[Products Service] GET /products/${productSku} - SKU NO encontrado`);
         res.writeHead(404);
-        res.end(JSON.stringify({ error: `Product SKU ${productSku} not found` }));
+        res.end(JSON.stringify({ error: `Product SKU ${productSku} NO encontrado` }));
       }
     } else {
       // Manejar endpoints o métodos no soportados por el contrato del servicio
       console.warn(`[Products Service] Ruta no encontrada o método no permitido: ${method} ${url}`);
       res.writeHead(404);
-      res.end(JSON.stringify({ error: 'Endpoint or method not supported' }));
+      res.end(JSON.stringify({ error: 'Endpoint o método no soportado' }));
     }
   } catch (error) {
     // Captura de excepciones
     console.error('[Products Service] Error interno:', error);
     res.writeHead(500);
-    res.end(JSON.stringify({ error: 'Internal Server Error' }));
+    res.end(JSON.stringify({ error: 'Error interno del servidor' }));
   }
 });
 

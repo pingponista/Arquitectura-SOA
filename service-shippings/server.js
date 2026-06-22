@@ -27,13 +27,13 @@ const server = http.createServer((req, res) => {
 
           // Validación básica del contrato
           if (!userId || !sku) {
-            console.warn('[Shippings Service] Bad Request - Falta userId o sku');
+            console.warn('[Servicio de envíos] Solicitud incorrecta - Falta userId o sku');
             res.writeHead(400);
-            res.end(JSON.stringify({ error: 'Missing required parameters: userId and sku' }));
+            res.end(JSON.stringify({ error: 'Faltan parámetros obligatorios: userId y sku' }));
             return;
           }
 
-          console.log(`[Shippings Service] Despachando SKU: ${sku} para el Usuario: ${userId}`);
+          console.log(`[Servicio de envíos] Despachando SKU: ${sku} para el Usuario: ${userId}`);
 
           // Simular generación de tracking y despacho logístico
           const trackingId = `TRK-${Date.now()}-${Math.floor(Math.random() * 9000) + 1000}`;
@@ -46,24 +46,24 @@ const server = http.createServer((req, res) => {
           res.writeHead(201); // Created
           res.end(JSON.stringify(responsePayload));
         } catch (parseError) {
-          console.error('[Shippings Service] JSON Parse Error:', parseError);
+          console.error('[Servicio de envíos] Error al parsear JSON:', parseError);
           res.writeHead(400);
-          res.end(JSON.stringify({ error: 'Malformed JSON payload' }));
+          res.end(JSON.stringify({ error: 'Payload JSON con formato incorrecto' }));
         }
       });
     } else {
-      console.warn(`[Shippings Service] Ruta no encontrada o método no permitido: ${method} ${url}`);
+      console.warn(`[Servicio de envíos] Ruta no encontrada o método no permitido: ${method} ${url}`);
       res.writeHead(404);
-      res.end(JSON.stringify({ error: 'Endpoint or method not supported' }));
+      res.end(JSON.stringify({ error: 'Endpoint o método no soportado' }));
     }
   } catch (error) {
-    console.error('[Shippings Service] Error interno:', error);
+    console.error('[Servicio de envíos] Error interno:', error);
     res.writeHead(500);
-    res.end(JSON.stringify({ error: 'Internal Server Error' }));
+    res.end(JSON.stringify({ error: 'Error interno del servidor' }));
   }
 });
 
 // Arrancar el servicio en el puerto configurado
 server.listen(PORT, () => {
-  console.log(`[Shippings Service] Escuchando en el puerto ${PORT} (Servicio Interno de Envíos)`);
+  console.log(`[Servicio de envíos] Escuchando en el puerto ${PORT} (Servicio Interno de Envíos)`);
 });

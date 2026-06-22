@@ -37,19 +37,19 @@ const server = http.createServer((req, res) => {
       } else {
         console.warn(`[Users Service] GET /users/${userId} - Usuario NO encontrado`);
         res.writeHead(404);
-        res.end(JSON.stringify({ error: `User with ID ${userId} not found` }));
+        res.end(JSON.stringify({ error: `Usuario con ID ${userId} no encontrado` }));
       }
     } else {
       // Manejar endpoints o métodos no soportados por el contrato del servicio
       console.warn(`[Users Service] Ruta no encontrada o método no permitido: ${method} ${url}`);
       res.writeHead(404);
-      res.end(JSON.stringify({ error: 'Endpoint or method not supported' }));
+      res.end(JSON.stringify({ error: 'Endpoint o método no soportado' }));
     }
   } catch (error) {
     // Captura de errores internos del servicio para prevenir caídas imprevistas
     console.error('[Users Service] Error interno:', error);
     res.writeHead(500);
-    res.end(JSON.stringify({ error: 'Internal Server Error' }));
+    res.end(JSON.stringify({ error: 'Error interno del servidor' }));
   }
 });
 

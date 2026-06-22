@@ -44,8 +44,8 @@ const server = http.createServer((req, res) => {
           if (!userId || !productSku) {
             res.writeHead(400);
             res.end(JSON.stringify({ 
-              error: 'Invalid request', 
-              message: 'Missing required fields: userId and productSku' 
+              error: 'Solicitud inválida', 
+              message: 'Faltan campos obligatorios: userId y productSku' 
             }));
             return;
           }
@@ -62,19 +62,19 @@ const server = http.createServer((req, res) => {
           } catch (fetchErr) {
             console.error('[ESB Bus] Error conectando con service-users:', fetchErr.message);
             res.writeHead(502); // Bad Gateway
-            res.end(JSON.stringify({ error: 'Gateway Error', message: 'Unable to contact Users Service' }));
+            res.end(JSON.stringify({ error: 'Error de pasarela', message: 'No se pudo establecer conexión con el servicio de usuarios' }));
             return;
           }
 
           if (userResponse.status === 404) {
             res.writeHead(404);
-            res.end(JSON.stringify({ error: 'Business Validation Failed', message: `User with ID ${userId} does not exist` }));
+            res.end(JSON.stringify({ error: 'Validación de negocio fallida', message: `El usuario con ID ${userId} no existe` }));
             return;
           }
 
           if (!userResponse.ok) {
             res.writeHead(502);
-            res.end(JSON.stringify({ error: 'Service Error', message: 'Users service returned an error status' }));
+            res.end(JSON.stringify({ error: 'Error del servicio', message: 'El servicio de usuarios devolvió un estado de error' }));
             return;
           }
 
@@ -85,8 +85,8 @@ const server = http.createServer((req, res) => {
             console.warn(`[ESB Bus] Transacción rechazada: El usuario ${userId} está INACTIVO.`);
             res.writeHead(422); // Unprocessable Entity
             res.end(JSON.stringify({ 
-              error: 'Business Validation Failed', 
-              message: `User status is '${user.status}'. Only ACTIVE users can perform checkouts.` 
+              error: 'Validación de negocio fallida', 
+              message: `El estado del usuario es '${user.status}'. Solo los usuarios activos pueden realizar compras.` 
             }));
             return;
           }
@@ -101,42 +101,53 @@ const server = http.createServer((req, res) => {
           } catch (fetchErr) {
             console.error('[ESB Bus] Error conectando con service-products:', fetchErr.message);
             res.writeHead(502);
-            res.end(JSON.stringify({ error: 'Gateway Error', message: 'Unable to contact Products Service' }));
+            res.end(JSON.stringify({ error: 'Error de pasarela', message: 'No se pudo establecer conexión con el servicio de productos' }));
             return;
           }
 
           if (productResponse.status === 404) {
             res.writeHead(404);
-            res.end(JSON.stringify({ error: 'Business Validation Failed', message: `Product with SKU ${productSku} does not exist` }));
+            res.end(JSON.stringify({ error: 'Validación de negocio fallida', message: `El producto con SKU ${productSku} no existe` }));
             return;
           }
 
           if (!productResponse.ok) {
             res.writeHead(502);
-            res.end(JSON.stringify({ error: 'Service Error', message: 'Products service returned an error status' }));
+            res.end(JSON.stringify({ error: 'Error del servicio', message: 'El servicio de productos devolvió un estado de error' }));
             return;
           }
 
           const product = await productResponse.json();
 
           // Regla de Negocio: Debe haber stock disponible
-          if (product.stock <= 0) {
+          const productStock = Number(product.stock);
+          if (isNaN(productStock) || productStock <= 0) {
             console.warn(`[ESB Bus] Transacción rechazada: SKU ${productSku} sin stock disponible.`);
             res.writeHead(422);
             res.end(JSON.stringify({ 
-              error: 'Business Validation Failed', 
-              message: `Product '${product.title}' is out of stock.` 
+              error: 'Validación de negocio fallida', 
+              message: `El producto '${product.title}' no tiene stock disponible.` 
             }));
             return;
           }
 
           // Regla de Negocio: El saldo disponible del usuario debe cubrir el costo del producto
-          if (user.balance < product.price) {
-            console.warn(`[ESB Bus] Transacción rechazada: Fondos insuficientes. Saldo: ${user.balance}, Precio: ${product.price}`);
+          // Se convierten de forma explícita a números para evitar comparaciones incorrectas de cadenas.
+          const userBalance = Number(user.balance);
+          const productPrice = Number(product.price);
+
+          if (
+            user.balance === undefined || 
+            product.price === undefined || 
+            isNaN(userBalance) || 
+            isNaN(productPrice) || 
+            userBalance < productPrice
+          ) {
+            console.warn(`[ESB Bus] Transacción rechazada: Fondos insuficientes o datos de saldo/precio inválidos. Saldo: ${user.balance}, Precio: ${product.price}`);
             res.writeHead(422);
             res.end(JSON.stringify({ 
-              error: 'Business Validation Failed', 
-              message: `Insufficient funds. User balance is $${user.balance.toFixed(2)} but product costs $${product.price.toFixed(2)}.` 
+              error: 'Validación de negocio fallida', 
+              message: `Fondos insuficientes. El saldo del usuario es $${(userBalance || 0).toFixed(2)} pero el producto cuesta $${(productPrice || 0).toFixed(2)}.` 
             }));
             return;
           }
@@ -159,13 +170,13 @@ const server = http.createServer((req, res) => {
           } catch (fetchErr) {
             console.error('[ESB Bus] Error conectando con service-shippings:', fetchErr.message);
             res.writeHead(502);
-            res.end(JSON.stringify({ error: 'Gateway Error', message: 'Unable to contact Shippings Service' }));
+            res.end(JSON.stringify({ error: 'Error de pasarela', message: 'No se pudo establecer conexión con el servicio de envíos' }));
             return;
           }
 
           if (!shippingResponse.ok) {
             res.writeHead(502);
-            res.end(JSON.stringify({ error: 'Service Error', message: 'Shippings service returned an error status' }));
+            res.end(JSON.stringify({ error: 'Error del servicio', message: 'El servicio de envíos devolvió un estado de error' }));
             return;
           }
 
@@ -176,22 +187,22 @@ const server = http.createServer((req, res) => {
           // ======================================================================
           // El ESB abstrae el flujo, agregando los datos de los tres servicios atómicos
           // en una estructura de respuesta unificada, ocultando el diseño interno de la red.
-          const remainingBalance = user.balance - product.price;
+          const remainingBalance = userBalance - productPrice;
           const canonicalResponse = {
-            status: 'SUCCESS',
-            message: 'Checkout completed successfully',
+            status: 'EXITOSO',
+            message: 'Compra completada con éxito',
             transaction: {
               timestamp: new Date().toISOString(),
               user: {
                 id: user.id,
                 name: user.name,
-                previousBalance: user.balance,
+                previousBalance: userBalance,
                 remainingBalance: parseFloat(remainingBalance.toFixed(2))
               },
               product: {
                 sku: product.sku,
                 title: product.title,
-                price: product.price
+                price: productPrice
               }
             },
             shipping: {
@@ -208,18 +219,18 @@ const server = http.createServer((req, res) => {
         } catch (parseError) {
           console.error('[ESB Bus] Error parseando JSON de entrada:', parseError);
           res.writeHead(400);
-          res.end(JSON.stringify({ error: 'Malformed JSON request body' }));
+          res.end(JSON.stringify({ error: 'Cuerpo de la solicitud JSON con formato incorrecto' }));
         }
       });
     } else {
       console.warn(`[ESB Bus] Endpoint no soportado: ${method} ${url}`);
       res.writeHead(404);
-      res.end(JSON.stringify({ error: 'Endpoint or method not supported' }));
+      res.end(JSON.stringify({ error: 'Endpoint o método no soportado' }));
     }
   } catch (error) {
     console.error('[ESB Bus] Error crítico en el bus:', error);
     res.writeHead(500);
-    res.end(JSON.stringify({ error: 'Internal ESB Server Error' }));
+    res.end(JSON.stringify({ error: 'Error interno del servidor ESB' }));
   }
 });
 
