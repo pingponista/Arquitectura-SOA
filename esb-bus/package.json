@@ -1,0 +1,7 @@
+{
+  "name": "esb-bus",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server.js",
+  "private": true
+}

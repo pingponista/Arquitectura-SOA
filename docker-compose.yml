@@ -1,0 +1,123 @@
+version: '3.8'
+
+# ==========================================
+# REDES (NETWORKS)
+# ==========================================
+# Definimos la red empresarial aislada para la arquitectura SOA.
+# Todos los contenedores de servicios internos y el ESB estarán en esta red,
+# permitiéndoles comunicarse entre sí mediante resolución de nombres DNS interna de Docker.
+# Los servicios de base de datos o contratos internos no serán expuestos al host físico,
+# manteniendo la seguridad y el desacoplamiento de la red.
+networks:
+  soa_enterprise_network:
+    driver: bridge
+
+services:
+  # ==========================================
+  # 1. SERVICIO DE USUARIOS (service-users)
+  # ==========================================
+  service-users:
+    container_name: service-users
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: service-users
+    environment:
+      - PORT=4001
+      - NODE_ENV=production
+    # No mapeamos puertos (ports) al host. Solo exponemos el puerto dentro de la red privada de Docker.
+    expose:
+      - "4001"
+    networks:
+      - soa_enterprise_network
+    restart: on-failure
+
+  # ==========================================
+  # 2. SERVICIO DE PRODUCTOS (service-products)
+  # ==========================================
+  service-products:
+    container_name: service-products
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: service-products
+    environment:
+      - PORT=4002
+      - NODE_ENV=production
+    expose:
+      - "4002"
+    networks:
+      - soa_enterprise_network
+    restart: on-failure
+
+  # ==========================================
+  # 3. SERVICIO DE ENVÍOS (service-shippings)
+  # ==========================================
+  service-shippings:
+    container_name: service-shippings
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: service-shippings
+    environment:
+      - PORT=4003
+      - NODE_ENV=production
+    expose:
+      - "4003"
+    networks:
+      - soa_enterprise_network
+    restart: on-failure
+
+  # ==========================================
+  # 4. BUS DE SERVICIOS EMPRESARIALES (esb-bus)
+  # ==========================================
+  # Actúa como el mediador/orquestador y único punto de entrada público (puerto 5000).
+  # Consume los servicios internos y consolida la lógica de negocio para los clientes externos.
+  esb-bus:
+    container_name: esb-bus
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: esb-bus
+    ports:
+      - "5000:5000" # Mapeo público: puerto 5000 en el host se redirige al 5000 en el contenedor
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      # URLs internas de los microservicios basadas en la red de Docker:
+      - USERS_SERVICE_URL=http://service-users:4001
+      - PRODUCTS_SERVICE_URL=http://service-products:4002
+      - SHIPPINGS_SERVICE_URL=http://service-shippings:4003
+    networks:
+      - soa_enterprise_network
+    depends_on:
+      - service-users
+      - service-products
+      - service-shippings
+    restart: on-failure
+
+  # ==========================================
+  # 5. APLICACIÓN DE CLIENTE (app-client)
+  # ==========================================
+  # Contenedor encargado de ejecutar las pruebas de integración automáticas.
+  # Espera a que el ESB esté en línea y realiza llamadas POST de checkout simulando clientes.
+  app-client:
+    container_name: app-client
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: app-client
+    # Sobrescribimos el comando por defecto para ejecutar index.js en lugar de server.js
+    command: ["node", "index.js"]
+    environment:
+      - ESB_SERVICE_URL=http://esb-bus:5000
+      - NODE_ENV=production
+    networks:
+      - soa_enterprise_network
+    depends_on:
+      - esb-bus
