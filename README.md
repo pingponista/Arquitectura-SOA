@@ -8,29 +8,30 @@ Este proyecto es una simulación empresarial y didáctica de una **Arquitectura 
 
 El siguiente diagrama ilustra cómo fluyen los datos en el sistema. Los servicios internos están aislados de la red exterior y solo se comunican con el ESB:
 
-```mermaid
 graph TD
-    subgraph Red Pública (Host / Cliente)
+    %% Subgrafos con nombres entre comillas para evitar errores de parseo por caracteres especiales
+    subgraph "Red Pública (Host / Cliente)"
         frontend[Interfaz Web / Navegador]
         postman[Postman / curl]
     end
     
-    subgraph soa_enterprise_network (Red Aislada de Docker)
-        esb-bus[ESB Orchestrator / Puerto :5000]
-        service-users[Servicio de Usuarios / Puerto :4001]
-        service-products[Servicio de Productos / Puerto :4002]
-        service-shippings[Servicio de Envíos / Puerto :4003]
-        app-client[Cliente de Integración Automático]
+    subgraph "soa_enterprise_network (Red Aislada de Docker)"
+        esb_bus[ESB Orchestrator / Puerto :5000]
+        service_users[Servicio de Usuarios / Puerto :4001]
+        service_products[Servicio de Productos / Puerto :4002]
+        service_shippings[Servicio de Envíos / Puerto :4003]
+        app_client[Cliente de Integración Automático]
     end
 
-    frontend -->|POST /esb/v1/checkout| esb-bus
-    postman -->|POST /esb/v1/checkout| esb-bus
-    app-client -->|POST /esb/v1/checkout| esb-bus
+    %% Flujos de Clientes Externos hacia el BUS
+    frontend -->|POST /esb/v1/checkout| esb_bus
+    postman -->|POST /esb/v1/checkout| esb_bus
+    app_client -->|POST /esb/v1/checkout| esb_bus
 
-    esb-bus -->|GET /users/:id| service-users
-    esb-bus -->|GET /products/:sku| service-products
-    esb-bus -->|POST /shipping/dispatch| service-shippings
-```
+    %% Orquestación Interna del ESB (Patrón SOA)
+    esb_bus -->|1. GET /users/:id| service_users
+    esb_bus -->|2. GET /products/:sku| service_products
+    esb_bus -->|3. POST /shipping/dispatch| service_shippings
 
 ---
 
@@ -92,7 +93,7 @@ Para interactuar con el sistema de manera libre:
 2. Abre la interfaz web haciendo doble clic sobre el archivo [index.html](file:///c:/Users/alexd/OneDrive/Escritorio/REVOLUTION-JS/Developer/arquitectura-SOA/frontend/index.html) en la carpeta `frontend`.
 3. Selecciona un usuario y un producto en la interfaz interactiva para ver cómo reacciona dinámicamente el bus de servicios en base a las reglas de negocio (fondos, stock o estado de cuenta).
 
-   
+
 # Fuentes Bibliográficas y Estándares Técnicos Aplicados
 
 Este documento detalla las fuentes oficiales, autores y especificaciones de la industria que respaldan el diseño arquitectónico, los patrones de integración y las decisiones de infraestructura implementadas en esta aplicación SOA.
