@@ -91,3 +91,35 @@ Para interactuar con el sistema de manera libre:
    *(O alternativamente, corre localmente con `node verify_local.js`)*.
 2. Abre la interfaz web haciendo doble clic sobre el archivo [index.html](file:///c:/Users/alexd/OneDrive/Escritorio/REVOLUTION-JS/Developer/arquitectura-SOA/frontend/index.html) en la carpeta `frontend`.
 3. Selecciona un usuario y un producto en la interfaz interactiva para ver cómo reacciona dinámicamente el bus de servicios en base a las reglas de negocio (fondos, stock o estado de cuenta).
+
+   
+# Fuentes Bibliográficas y Estándares Técnicos Aplicados
+
+Este documento detalla las fuentes oficiales, autores y especificaciones de la industria que respaldan el diseño arquitectónico, los patrones de integración y las decisiones de infraestructura implementadas en esta aplicación SOA.
+
+---
+
+## 1. Arquitectura SOA y Patrones de Integración Empresarial (EIP)
+
+* **Hohpe, G., & Woolf, B. (2003).** *Enterprise Integration Patterns: Designing, Building, and Deploying Messaging Solutions*. Addison-Wesley Professional.
+    * **Patrones aplicados:** *Process Manager (Orchestrator)*, *Message Translator* y *Canonical Data Model*. Respaldan la existencia del `esb-bus` como el mediador centralizado que coordina la secuencia de llamadas y unifica el formato de las respuestas.
+* **Erl, T. (2016).** *SOA Principles of Service Design*. Prentice Hall.
+    * **Principios aplicados:** *Service Composability* (Composición de Servicios), *Service Autonomy* (Autonomía) y *Service Loose Coupling* (Acoplamiento Débil). Sustentan el diseño de los contratos de usuarios, productos y envíos como entidades totalmente independientes y agnósticas entre sí.
+
+---
+
+## 2. Estándares de Protocolo y Comunicación Web
+
+* **Internet Engineering Task Force (IETF). (2007).** *RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV)*. Sección 11.2: "422 Unprocessable Entity".
+    * **Estándar aplicado:** Uso del código de estado HTTP `422` en Postman para manejar rechazos semánticos por reglas de negocio (ej. fondos insuficientes o falta de stock), diferenciándolo de un error de sintaxis (`400 Bad Request`).
+* **Fielding, R., & Reschke, J. (2014).** *RFC 7231: Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content*.
+    * **Estándar aplicado:** Definición de los contratos semánticos REST mediante verbos HTTP (`GET` para consultas atómicas de contratos y `POST` para la mutación u orquestación de transacciones en el ESB).
+
+---
+
+## 3. Infraestructura de Contenedores y Buenas Prácticas de Software
+
+* **Docker Documentation.** *Docker Bridge Network Drivers Reference*. Recuperado de [https://docs.docker.com](https://docs.docker.com)
+    * **Mecanismo aplicado:** *User-Defined Bridge Networks* y *Automatic Service Discovery*. Respalda el aislamiento perimetral de los contratos internos mediante el uso de `expose` en el archivo `docker-compose.yml`, forzando la comunicación exclusiva a través de la resolución DNS interna de Docker.
+* **Wiggins, A. (2011).** *The Twelve-Factor App*. Factor III: Configuración. Recuperado de [https://12factor.net/config](https://12factor.net/config)
+    * **Buena práctica aplicada:** Inyección dinámica de dependencias e infraestructura mediante variables de entorno (`process.env`), permitiendo que las URLs de ubicación de los servicios se desacoplen del código fuente del Bus de Servicios.
