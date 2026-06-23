@@ -9,7 +9,7 @@ Este proyecto es una simulación empresarial y didáctica de una **Arquitectura 
 El siguiente diagrama ilustra cómo fluyen los datos en el sistema. Los servicios internos están aislados de la red exterior y solo se comunican con el ESB:
 
 graph TD
-    %% Subgrafos con nombres entre comillas para evitar errores de parseo por caracteres especiales
+    %% 
     subgraph "Red Pública (Host / Cliente)"
         frontend[Interfaz Web / Navegador]
         postman[Postman / curl]
