@@ -18,11 +18,59 @@ if (!USERS_SERVICE_URL || !PRODUCTS_SERVICE_URL || !SHIPPINGS_SERVICE_URL) {
 }
 
 // Crear servidor HTTP nativo del ESB
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
+  // Configurar cabeceras CORS para permitir peticiones desde el frontend en el navegador
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Responder a peticiones de preflight CORS (OPTIONS)
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   res.setHeader('Content-Type', 'application/json');
 
   try {
     const { method, url } = req;
+
+    // ==========================================================================
+    // RUTAS GATEWAY (Proxy para consultar datos de usuarios y productos)
+    // ==========================================================================
+    const userProxyMatch = url.match(/^\/esb\/v1\/users\/([^/]+)$/);
+    const productProxyMatch = url.match(/^\/esb\/v1\/products\/([^/]+)$/);
+
+    if (method === 'GET' && userProxyMatch) {
+      const userId = userProxyMatch[1];
+      try {
+        const response = await fetch(`${USERS_SERVICE_URL}/users/${userId}`);
+        const data = await response.json();
+        res.writeHead(response.status);
+        res.end(JSON.stringify(data));
+      } catch (err) {
+        console.error('[ESB Bus] Error de pasarela consultando usuario:', err.message);
+        res.writeHead(502);
+        res.end(JSON.stringify({ error: 'Error de pasarela', message: 'No se pudo contactar con el servicio de usuarios' }));
+      }
+      return;
+    }
+
+    if (method === 'GET' && productProxyMatch) {
+      const productSku = productProxyMatch[1];
+      try {
+        const response = await fetch(`${PRODUCTS_SERVICE_URL}/products/${productSku}`);
+        const data = await response.json();
+        res.writeHead(response.status);
+        res.end(JSON.stringify(data));
+      } catch (err) {
+        console.error('[ESB Bus] Error de pasarela consultando producto:', err.message);
+        res.writeHead(502);
+        res.end(JSON.stringify({ error: 'Error de pasarela', message: 'No se pudo contactar con el servicio de productos' }));
+      }
+      return;
+    }
 
     // ==========================================================================
     // RUTA DE ORQUESTRACIÓN: POST /esb/v1/checkout

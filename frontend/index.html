@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal de Demostración SOA - Enterprise ESB</title>
+  <!-- Fuentes Modernas -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================
+       SISTEMA DE DISEÑO Y CONFIGURACIÓN (CSS)
+       ========================================== */
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --bg-card-hover: rgba(51, 65, 85, 0.8);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --primary: #6366f1; /* Indigo */
+      --primary-glow: rgba(99, 102, 241, 0.3);
+      --success: #10b981; /* Verde */
+      --danger: #ef4444; /* Rojo */
+      --warning: #f59e0b; /* Naranja */
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dark: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 2rem 1rem;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* HEADER */
+    header {
+      background: var(--bg-card);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .header-title h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a5b4fc, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-title p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    .endpoint-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+    }
+
+    .endpoint-selector label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .endpoint-selector input {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      outline: none;
+      width: 200px;
+    }
+
+    /* MAIN GRID Layout */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--bg-card);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px -15px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .panel-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* CARD LISTS */
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .card {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    .card.active {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.15);
+      box-shadow: 0 0 20px var(--primary-glow);
+    }
+
+    /* DETALLES DE TARJETAS */
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-name {
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-active {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-inactive {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .card-body {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .card-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .card-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--text-main);
+    }
+
+    /* CONSOLE & RESULT */
+    .checkout-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .summary-bar {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      font-size: 0.9rem;
+    }
+
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .summary-label {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .summary-value {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .btn-checkout {
+      background: linear-gradient(135deg, var(--primary), #4f46e5);
+      color: white;
+      border: none;
+      padding: 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-checkout:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+    }
+
+    .btn-checkout:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn-checkout:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* CONSOLA */
+    .console-container {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #020617;
+      min-height: 250px;
+    }
+
+    .console-header {
+      background: #1e293b;
+      padding: 0.6rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .console-title {
+      font-size: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .console-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-dark);
+    }
+
+    .console-dot.success { background: var(--success); }
+    .console-dot.danger { background: var(--danger); }
+    .console-dot.pending { background: var(--warning); }
+
+    .console-status-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .console-body {
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      overflow-y: auto;
+      flex-grow: 1;
+      color: #38bdf8; /* Azul consola */
+      white-space: pre-wrap; /* Permite formatear saltos de línea y sangrías del JSON */
+    }
+
+    .console-placeholder {
+      color: var(--text-dark);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      font-style: italic;
+    }
+
+    /* SPINNER LOGIC */
+    .spinner {
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top: 2px solid white;
+      width: 16px;
+      height: 16px;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: var(--text-dark);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Encabezado del Portal -->
+  <header>
+    <div class="header-title">
+      <h1>Portal de Demostración SOA</h1>
+      <p>Simulador Dinámico de Orquestación Empresarial mediante Bus de Servicios (ESB)</p>
+    </div>
+    <div class="endpoint-selector">
+      <label for="esb-endpoint">ESB Endpoint:</label>
+      <input type="text" id="esb-endpoint" value="http://localhost:5000">
+    </div>
+  </header>
+
+  <!-- Contenedor Principal Grid -->
+  <div class="grid">
+    
+    <!-- COLUMNA 1: Configuración de Prueba -->
+    <div class="panel">
+      <div>
+        <div class="panel-subtitle">Paso 1</div>
+        <div class="panel-title">Seleccionar Usuario</div>
+      </div>
+      
+      <div class="card-list" id="users-list">
+        <!-- Usuario 1 -->
+        <div class="card" data-user-id="1" onclick="selectUser('1')">
+          <div class="card-header">
+            <div class="card-name" id="user-name-1">Cargando...</div>
+            <div class="badge" id="user-badge-1">-</div>
+          </div>
+          <div class="card-body">
+            <div class="card-desc">Saldo disponible en cuenta</div>
+            <div class="card-value" id="user-val-1">$0.00</div>
+          </div>
+        </div>
+
+        <!-- Usuario 2 -->
+        <div class="card" data-user-id="2" onclick="selectUser('2')">
+          <div class="card-header">
+            <div class="card-name" id="user-name-2">Cargando...</div>
+            <div class="badge" id="user-badge-2">-</div>
+          </div>
+          <div class="card-body">
+            <div class="card-desc">Saldo disponible en cuenta</div>
+            <div class="card-value" id="user-val-2">$0.00</div>
+          </div>
+        </div>
+
+        <!-- Usuario 3 -->
+        <div class="card" data-user-id="3" onclick="selectUser('3')">
+          <div class="card-header">
+            <div class="card-name" id="user-name-3">Cargando...</div>
+            <div class="badge" id="user-badge-3">-</div>
+          </div>
+          <div class="card-body">
+            <div class="card-desc">Saldo disponible en cuenta</div>
+            <div class="card-value" id="user-val-3">$0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 0.5rem;">
+        <div class="panel-subtitle">Paso 2</div>
+        <div class="panel-title">Seleccionar Producto</div>
+      </div>
+
+      <div class="card-list" id="products-list">
+        <!-- Producto 1 -->
+        <div class="card" data-product-sku="LAPTOP-001" onclick="selectProduct('LAPTOP-001')">
+          <div class="card-header">
+            <div class="card-name" id="prod-name-1">Cargando...</div>
+            <div class="card-value" id="prod-val-1">$0.00</div>
+          </div>
+          <div class="card-body">
+            <div class="card-desc" id="prod-stock-1">Stock: -</div>
+            <div class="card-desc" style="font-family: monospace;">LAPTOP-001</div>
+          </div>
+        </div>
+
+        <!-- Producto 2 -->
+        <div class="card" data-product-sku="MOUSE-002" onclick="selectProduct('MOUSE-002')">
+          <div class="card-header">
+            <div class="card-name" id="prod-name-2">Cargando...</div>
+            <div class="card-value" id="prod-val-2">$0.00</div>
+          </div>
+          <div class="card-body">
+            <div class="card-desc" id="prod-stock-2">Stock: -</div>
+            <div class="card-desc" style="font-family: monospace;">MOUSE-002</div>
+          </div>
+        </div>
+
+        <!-- Producto 3 -->
+        <div class="card" data-product-sku="KEYBOARD-003" onclick="selectProduct('KEYBOARD-003')">
+          <div class="card-header">
+            <div class="card-name" id="prod-name-3">Cargando...</div>
+            <div class="card-value" id="prod-val-3">$0.00</div>
+          </div>
+          <div class="card-body">
+            <div class="card-desc" id="prod-stock-3">Stock: -</div>
+            <div class="card-desc" style="font-family: monospace;">KEYBOARD-003</div>
+          </div>
+        </div>
+
+        <!-- Producto Especial: Inexistente -->
+        <div class="card" data-product-sku="SKU-INEXISTENTE" onclick="selectProduct('SKU-INEXISTENTE')">
+          <div class="card-header">
+            <div class="card-name" style="color: var(--danger);">Producto Inexistente (Caso 404)</div>
+            <div class="card-value">-</div>
+          </div>
+          <div class="card-body">
+            <div class="card-desc">Simula un SKU erróneo</div>
+            <div class="card-desc" style="font-family: monospace; color: var(--danger);">SKU-INEXISTENTE</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMNA 2: Consola ESB y Ejecución -->
+    <div class="panel">
+      <div>
+        <div class="panel-subtitle">Paso 3</div>
+        <div class="panel-title">Orquestar Transacción</div>
+      </div>
+
+      <div class="checkout-actions">
+        <!-- Resumen de Selección -->
+        <div class="summary-bar">
+          <div class="summary-item">
+            <span class="summary-label">Usuario Seleccionado</span>
+            <span class="summary-value" id="summary-user">Ninguno</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Producto a Comprar</span>
+            <span class="summary-value" id="summary-product">Ninguno</span>
+          </div>
+        </div>
+
+        <!-- Botón de Ejecución -->
+        <button id="btn-submit" class="btn-checkout" onclick="runCheckout()" disabled>
+          <span>Procesar Transacción en el ESB</span>
+        </button>
+      </div>
+
+      <!-- Resultado Simplificado de Negocio -->
+      <div id="business-result-container" style="display: none; margin-top: 0.5rem; transition: all 0.3s ease;">
+        <div class="panel-subtitle">Resultado de Negocio</div>
+        <div id="business-result-card" style="margin-top: 0.5rem; padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 1rem; transition: all 0.3s ease;">
+          <div id="business-result-icon" style="font-size: 2rem; line-height: 1;"></div>
+          <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+            <div id="business-result-title" style="font-weight: 700; font-size: 1.05rem;"></div>
+            <div id="business-result-msg" style="font-size: 0.85rem; color: var(--text-muted);"></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel-subtitle">Respuesta del Servidor</div>
+        <div class="panel-title">
+          <span>Consola Canónica</span>
+          <span id="console-http-status" class="console-status-badge" style="color: var(--text-dark);">ESPERANDO...</span>
+        </div>
+      </div>
+
+      <!-- Consola de Salida de Datos -->
+      <div class="console-container">
+        <div class="console-header">
+          <div class="console-title">
+            <div class="console-dot" id="console-dot"></div>
+            <span>JSON Output</span>
+          </div>
+          <span style="font-size: 0.7rem; color: var(--text-dark); font-family: monospace;">http-client-response.json</span>
+        </div>
+        <div class="console-body" id="console-output">
+          <div class="console-placeholder">Selecciona un usuario y un producto, luego haz clic en "Procesar Transacción".</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <footer>
+    SOA Enterprise Bus Architecture &bull; Desarrollado con Node.js 20+ Native HTTP & Fetch API &bull; 2026
+  </footer>
+</div>
+
+<!-- ==========================================
+     LÓGICA JAVASCRIPT DEL CLIENTE
+     ========================================== -->
+<script>
+  let selectedUserId = null;
+  let selectedProductSku = null;
+
+  // Cargar datos al cargar la página
+  window.addEventListener('DOMContentLoaded', async () => {
+    await fetchAllData();
+  });
+
+  // Recupera la URL base del ESB
+  function getEsbUrl() {
+    return document.getElementById('esb-endpoint').value.trim();
+  }
+
+  // Consulta el ESB para obtener los datos mock de los servicios internos
+  async function fetchAllData() {
+    const url = getEsbUrl();
+    
+    // 1. Cargar Usuarios
+    const users = ['1', '2', '3'];
+    for (let i = 0; i < users.length; i++) {
+      const id = users[i];
+      try {
+        const res = await fetch(`${url}/esb/v1/users/${id}`);
+        if (res.ok) {
+          const user = await res.json();
+          document.getElementById(`user-name-${id}`).textContent = user.name;
+          document.getElementById(`user-val-${id}`).textContent = `$${user.balance.toFixed(2)}`;
+          
+          const badge = document.getElementById(`user-badge-${id}`);
+          badge.textContent = user.status;
+          badge.className = 'badge ' + (user.status === 'ACTIVE' ? 'badge-active' : 'badge-inactive');
+        }
+      } catch (err) {
+        console.error(`Error cargando usuario ${id}:`, err);
+        document.getElementById(`user-name-${id}`).textContent = `Error de Conexión`;
+      }
+    }
+
+    // 2. Cargar Productos
+    const products = [
+      { id: '1', sku: 'LAPTOP-001' },
+      { id: '2', sku: 'MOUSE-002' },
+      { id: '3', sku: 'KEYBOARD-003' }
+    ];
+    for (let i = 0; i < products.length; i++) {
+      const p = products[i];
+      try {
+        const res = await fetch(`${url}/esb/v1/products/${p.sku}`);
+        if (res.ok) {
+          const prod = await res.json();
+          document.getElementById(`prod-name-${p.id}`).textContent = prod.title;
+          document.getElementById(`prod-val-${p.id}`).textContent = `$${prod.price.toFixed(2)}`;
+          document.getElementById(`prod-stock-${p.id}`).textContent = `Stock: ${prod.stock} uds`;
+        }
+      } catch (err) {
+        console.error(`Error cargando producto ${p.sku}:`, err);
+        document.getElementById(`prod-name-${p.id}`).textContent = `Error de Conexión`;
+      }
+    }
+  }
+
+  // Al seleccionar un usuario en la UI
+  function selectUser(userId) {
+    selectedUserId = userId;
+    
+    // Actualizar clases de selección en las tarjetas
+    document.querySelectorAll('#users-list .card').forEach(card => {
+      card.classList.remove('active');
+    });
+    document.querySelector(`#users-list .card[data-user-id="${userId}"]`).classList.add('active');
+
+    // Actualizar barra de resumen
+    const userName = document.getElementById(`user-name-${userId}`).textContent;
+    document.getElementById('summary-user').textContent = userName;
+
+    validateSubmitButton();
+  }
+
+  // Al seleccionar un producto en la UI
+  function selectProduct(sku) {
+    selectedProductSku = sku;
+
+    // Actualizar clases de selección en las tarjetas
+    document.querySelectorAll('#products-list .card').forEach(card => {
+      card.classList.remove('active');
+    });
+    document.querySelector(`#products-list .card[data-product-sku="${sku}"]`).classList.add('active');
+
+    // Actualizar barra de resumen
+    let prodTitle = sku;
+    if (sku === 'LAPTOP-001') prodTitle = document.getElementById('prod-name-1').textContent;
+    else if (sku === 'MOUSE-002') prodTitle = document.getElementById('prod-name-2').textContent;
+    else if (sku === 'KEYBOARD-003') prodTitle = document.getElementById('prod-name-3').textContent;
+    else if (sku === 'SKU-INEXISTENTE') prodTitle = 'Producto Inexistente';
+
+    document.getElementById('summary-product').textContent = prodTitle;
+
+    validateSubmitButton();
+  }
+
+  // Valida si se puede activar el botón de checkout
+  function validateSubmitButton() {
+    const btn = document.getElementById('btn-submit');
+    if (selectedUserId && selectedProductSku) {
+      btn.disabled = false;
+    } else {
+      btn.disabled = true;
+    }
+  }
+
+  // Ejecuta la orquestación del ESB (Checkout)
+  async function runCheckout() {
+    const url = getEsbUrl();
+    const btn = document.getElementById('btn-submit');
+    const consoleOutput = document.getElementById('console-output');
+    const consoleDot = document.getElementById('console-dot');
+    const statusText = document.getElementById('console-http-status');
+
+    // Estado inicial: Loading
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner"></div> <span>Procesando...</span>`;
+    
+    consoleDot.className = 'console-dot pending';
+    statusText.textContent = 'PROCESANDO...';
+    statusText.style.color = 'var(--warning)';
+    consoleOutput.innerHTML = `<span style="color: var(--warning)">[ESB Orquestador] Conectando con ${url}/esb/v1/checkout...\nEnviando payload al bus...</span>`;
+
+    try {
+      const response = await fetch(`${url}/esb/v1/checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: selectedUserId,
+          productSku: selectedProductSku
+        })
+      });
+
+      const status = response.status;
+      const data = await response.json();
+
+      // Formatear el JSON para la consola
+      const prettyJson = JSON.stringify(data, null, 2);
+
+      // Elementos del resultado simplificado para el usuario
+      const resultContainer = document.getElementById('business-result-container');
+      const resultCard = document.getElementById('business-result-card');
+      const resultIcon = document.getElementById('business-result-icon');
+      const resultTitle = document.getElementById('business-result-title');
+      const resultMsg = document.getElementById('business-result-msg');
+
+      resultContainer.style.display = 'block';
+
+      // Actualizar la interfaz basada en el HTTP Status
+      statusText.textContent = `HTTP ${status}`;
+      
+      if (response.ok) {
+        // Éxito (HTTP 200)
+        consoleDot.className = 'console-dot success';
+        statusText.style.color = 'var(--success)';
+        consoleOutput.innerHTML = `<span style="color: var(--success); font-weight: bold;">// COMPRA EXITOSA</span>\n${prettyJson}`;
+        
+        // Configurar tarjeta de resultado
+        resultCard.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+        resultCard.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        resultIcon.textContent = '✅';
+        resultTitle.textContent = 'Compra Completada';
+        resultTitle.style.color = 'var(--success)';
+        resultMsg.textContent = data.message || 'La transacción ha sido procesada y el envío despachado correctamente.';
+
+        // Refrescar saldos y stocks locales para ver reflejados los datos (simulación)
+        await fetchAllData();
+      } else {
+        // Fallos de negocio o cliente (HTTP 422, 404, etc.)
+        consoleDot.className = 'console-dot danger';
+        statusText.style.color = 'var(--danger)';
+        consoleOutput.innerHTML = `<span style="color: var(--danger); font-weight: bold;">// TRANSACCIÓN RECHAZADA</span>\n${prettyJson}`;
+
+        // Configurar tarjeta de resultado
+        resultCard.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        resultCard.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        resultIcon.textContent = '❌';
+        resultTitle.textContent = data.error || 'Transacción Fallida';
+        resultTitle.style.color = 'var(--danger)';
+        resultMsg.textContent = data.message || 'El mediador ESB rechazó la solicitud debido a una regla de negocio.';
+      }
+
+    } catch (err) {
+      console.error(err);
+      
+      const resultContainer = document.getElementById('business-result-container');
+      const resultCard = document.getElementById('business-result-card');
+      const resultIcon = document.getElementById('business-result-icon');
+      const resultTitle = document.getElementById('business-result-title');
+      const resultMsg = document.getElementById('business-result-msg');
+
+      resultContainer.style.display = 'block';
+      resultCard.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+      resultCard.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+      resultIcon.textContent = '🔌';
+      resultTitle.textContent = 'Error de Conexión';
+      resultTitle.style.color = 'var(--danger)';
+      resultMsg.textContent = `No se pudo establecer conexión con el Bus del ESB en: ${url}`;
+
+      consoleDot.className = 'console-dot danger';
+      statusText.textContent = 'ERROR DE RED';
+      statusText.style.color = 'var(--danger)';
+      consoleOutput.innerHTML = `<span style="color: var(--danger); font-weight: bold;">[Error de Conexión]</span>\n\nNo se pudo establecer conexión con el Bus del ESB en: ${url}.\n\nAsegúrate de que los servidores estén levantados y activos.`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<span>Procesar Transacción en el ESB</span>`;
+    }
+  }
+</script>
+</body>
+</html>
